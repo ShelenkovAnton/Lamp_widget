@@ -24,6 +24,5 @@ protected:
     auto paintEvent( QPaintEvent* ) -> void override;
 
 private:
-    State m_state{State::disconnected};
     QColor m_color{Qt::transparent};
 };

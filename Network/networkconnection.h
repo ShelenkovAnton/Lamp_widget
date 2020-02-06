@@ -30,6 +30,9 @@ private:
     auto initConnections( ) -> void;
     auto incomingData( ) -> void;
     auto reconnect( ) -> void;
+    auto sendRequest( QByteArray ) -> void;
+
+    auto state( ) -> void;
 
 private:
     QTcpSocket* m_socket{nullptr};

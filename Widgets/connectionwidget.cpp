@@ -26,6 +26,19 @@ auto ConnectionWidget::init( ) -> void
     initConnections( );
     initStateWidget( );
     initStyles( );
+    initAddressValidator( );
+    setState( State::disconnected );
+}
+
+auto ConnectionWidget::initAddressValidator( ) -> void
+{
+    const QString ipRange = "(([ 0]+)|([ 0]*[0-9] *)|([0-9][0-9] )|([ 0][0-9][0-9])|(1[0-9][0-9])|([2][0-4][0-9])|(25[0-5]))";
+    const QRegExp ipRegex( "^" + ipRange + "\\." + ipRange + "\\." + ipRange + "\\." + ipRange + "$" );
+    const auto ipValidator = new QRegExpValidator( ipRegex, this );
+
+    ui->txtServer->setValidator( ipValidator );
+    ui->txtServer->setInputMask( "000.000.000.000" );
+    ui->txtServer->setCursorPosition( 0 );
 }
 
 auto ConnectionWidget::initStateWidget( ) -> void
@@ -42,6 +55,7 @@ auto ConnectionWidget::initStateWidget( ) -> void
 
 auto ConnectionWidget::setState( State state ) -> void
 {
+    m_state = state;
     m_stateWidget->setState( state );
 
     constexpr auto connectText   = "Discconect";
@@ -81,14 +95,31 @@ auto ConnectionWidget::initStyles( ) -> void
 auto ConnectionWidget::initConnections( ) -> void
 {
     connect( ui->btnRestore, &QPushButton::clicked, this, &ConnectionWidget::on_btnRestore );
-    connect( ui->btnConnect, &QPushButton::clicked, this, &ConnectionWidget::sig_connect );
+    connect( ui->btnConnect, &QPushButton::clicked, this, &ConnectionWidget::on_btnConnect );
+}
+
+auto ConnectionWidget::on_btnConnect( ) -> void
+{
+    switch ( m_state )
+    {
+    case State::connected:
+        setState( State::disconnected );
+        emit sig_disconnect( );
+        break;
+    case State::disconnected:
+        setState( State::reconnection );
+        emit sig_connect( );
+        break;
+    case State::reconnection:
+        setState( State::disconnected );
+        emit sig_disconnect( );
+        break;
+    }
 }
 
 auto ConnectionWidget::getAdress( ) const -> QHostAddress
 {
-    // TODO: validate text
-    const auto text = ui->txtServer->text( ).isEmpty( ) ? "127.0.0.1" : ui->txtServer->text( );
-    return QHostAddress{text};
+    return QHostAddress{ui->txtServer->text( )};
 }
 
 auto ConnectionWidget::getPort( ) const -> uint16_t
@@ -98,10 +129,5 @@ auto ConnectionWidget::getPort( ) const -> uint16_t
 
 auto ConnectionWidget::getState( ) const -> State
 {
-    if ( m_stateWidget )
-    {
-        return m_stateWidget->getState( );
-    }
-    assert( false );
-    return State::disconnected;
+    return m_state;
 }

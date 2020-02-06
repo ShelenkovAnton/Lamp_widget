@@ -16,7 +16,7 @@ auto Server::incomingConnection( qintptr handle ) -> void
     connect( &m_socket, &QTcpSocket::readyRead, this, &Server::readyRead );
     connect( &m_socket, &QTcpSocket::disconnected, this, &Server::clientDisconnected );
 
-    m_socket.write( "you are connected to server" );
+    // m_socket.write( "you are connected to server" );
 }
 
 auto Server::generateRequest( ) -> QByteArray
@@ -35,16 +35,12 @@ auto Server::generateRequest( ) -> QByteArray
             arr.append( QByteArray::number( 0 ) );
         }
 
+        arr.append( QByteArray::number( 0 ) );
         arr.append( QByteArray::number( size, 16 ) );
 
         arr.append( static_cast<char>( getColor( ) ) );
         arr.append( static_cast<char>( getColor( ) ) );
         arr.append( static_cast<char>( getColor( ) ) );
-    }
-    else
-    {
-        arr.append( QByteArray::number( 0, 16 ) );
-        arr.append( QByteArray::number( 0, 16 ) );
     }
 
     return arr;
@@ -57,8 +53,8 @@ auto Server::getColor( ) const -> uint8_t
 
 auto Server::getSize( ) const -> uint16_t
 {
-    const auto num = std::rand( ) % 100;
-    return ( num < 3 ) ? ( std::rand( ) % 65535 ) : 3;
+    const auto num = std::rand( ) % 100; // imitate error of length in 3% cases
+    return ( num < 3 ) ? ( std::rand( ) % 255 ) : 3;
 }
 
 auto Server::getAction( ) const -> LampAction
@@ -92,6 +88,7 @@ auto Server::readyRead( ) -> void
 
 auto Server::clientDisconnected( ) -> void
 {
+    qDebug( ) << "Client disconnected from server";
 }
 
 auto Server::startServer( ) -> void
@@ -104,7 +101,7 @@ auto Server::startServer( ) -> void
 
 auto Server::start( ) -> void
 {
-    const auto timeout = 1 + ( std::rand( ) % 10 );
+    const auto timeout = 1 + ( std::rand( ) % 5 );
     m_timer.start( std::chrono::seconds( timeout ) );
 }
 

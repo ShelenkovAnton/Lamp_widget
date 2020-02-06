@@ -27,9 +27,15 @@ public:
 
     auto getState( ) const -> LampAction;
 
+    auto valid( ) const -> bool;
+
 private:
     auto parceRequest( const QByteArray& ) -> void;
+    auto parceColor( const QByteArray& ) -> void;
+
     auto setRGBColor( const ushort, const ushort, const ushort ) -> bool;
+    auto setStringColor( const QString& ) -> bool;
+    auto setColor( QColor&& color ) -> bool;
 
 private:
     LampAction m_action{LampAction::unknown};

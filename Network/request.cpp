@@ -12,6 +12,11 @@ auto Request::setAction( const LampAction type ) -> void
     m_action = type;
 }
 
+auto Request::valid( ) const -> bool
+{
+    return m_action != LampAction::unknown;
+}
+
 auto Request::setAction( const uint8_t value ) -> void
 {
     if ( static_cast<LampAction>( value ) == LampAction::on )
@@ -42,39 +47,61 @@ auto Request::getColor( ) const -> QColor
     return m_color;
 }
 
-auto Request::parceRequest( const QByteArray& request ) -> void
+auto Request::parceColor( const QByteArray& color ) -> void
 {
-    const auto size = request.size( );
-
-    if ( ( size == 3 ) || ( size == 6 ) )
+    if ( color.size( ) == 3 )
     {
-        setAction( static_cast<uint8_t>( request.at( 0 ) ) );
-    }
+        const auto red   = static_cast<uint8_t>( color[0] );
+        const auto green = static_cast<uint8_t>( color[1] );
+        const auto blue  = static_cast<uint8_t>( color[2] );
 
-    if ( size == 6 )
-    {
-        const auto length = request.mid( 1, 2 ).toUShort( );
-        if ( length != 3 )
+        if ( !setRGBColor( red, green, blue ) )
         {
             setAction( LampAction::unknown );
         }
-        else
+    }
+    else
+    {
+        if ( !setStringColor( color ) )
         {
-            const auto red   = static_cast<uint8_t>( request[3] );
-            const auto green = static_cast<uint8_t>( request[4] );
-            const auto blue  = static_cast<uint8_t>( request[5] );
-
-            if ( !setRGBColor( red, green, blue ) )
-            {
-                setAction( LampAction::unknown );
-            }
+            setAction( LampAction::unknown );
         }
     }
 }
 
+auto Request::parceRequest( const QByteArray& request ) -> void
+{
+    const auto size = request.size( );
+
+    if ( size == 0 )
+        return;
+
+    const auto action = static_cast<LampAction>( static_cast<int>( request[0] ) );
+
+    setAction( action );
+
+    const auto length = request.mid( 1, 3 ).toInt( );
+
+    if ( request.size( ) < length + 4 )
+    {
+        return;
+    }
+
+    parceColor( request.mid( 3, length ) );
+}
+
 auto Request::setRGBColor( const ushort red, const ushort green, const ushort blue ) -> bool
 {
-    QColor color{red, green, blue};
+    return setColor( QColor{red, green, blue} );
+}
+
+auto Request::setStringColor( const QString& str ) -> bool
+{
+    return setColor( QColor{str} );
+}
+
+auto Request::setColor( QColor&& color ) -> bool
+{
     const auto valid{color.isValid( )};
     if ( valid )
     {

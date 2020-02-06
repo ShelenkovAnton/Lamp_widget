@@ -29,9 +29,7 @@ auto StateWidget::paintEvent( QPaintEvent* ) -> void
 
 auto StateWidget::setState( const State state ) -> void
 {
-    m_state = state;
-
-    switch ( m_state )
+    switch ( state )
     {
     case State::connected:
         m_color = Qt::green;
@@ -40,14 +38,9 @@ auto StateWidget::setState( const State state ) -> void
         m_color = Qt::red;
         break;
     case State::reconnection:
-        m_color = Qt::transparent;
+        m_color = Qt::gray;
         break;
     }
 
     update( );
-}
-
-auto StateWidget::getState( ) const -> State
-{
-    return m_state;
 }

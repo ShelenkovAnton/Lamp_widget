@@ -33,6 +33,8 @@ auto MainWindow::init( ) -> void
 auto MainWindow::initConnections( ) -> void
 {
     connect( m_connectionWidget, &ConnectionWidget::sig_connect, this, &MainWindow::onConnectClick );
+    connect( m_connectionWidget, &ConnectionWidget::sig_disconnect, this, &MainWindow::onDisconnectClick );
+
     connect( &m_networkConnection, &NetworkConnection::sig_cannot_connect, this, &MainWindow::onCannotConnect );
     connect( &m_networkConnection, &NetworkConnection::sig_disconnected, this, &MainWindow::serverDisconnected );
     connect( &m_networkConnection, &NetworkConnection::sig_request, this, &MainWindow::incomingRequest );
@@ -42,13 +44,13 @@ auto MainWindow::initConnections( ) -> void
 auto MainWindow::initStyles( ) -> void
 {
     Styles::aplyMainStyle( this );
-    Styles::aplyMainStyle( m_connectionWidget );
 }
 
 auto MainWindow::serverDisconnected( ) -> void
 {
     m_connectionWidget->setState( State::reconnection );
     connectToServer( );
+    m_connectionWidget->setState( State::connected );
 }
 
 auto MainWindow::connected( ) -> void
@@ -56,29 +58,25 @@ auto MainWindow::connected( ) -> void
     m_connectionWidget->setState( State::connected );
 }
 
+auto MainWindow::onDisconnectClick( ) -> void
+{
+    m_networkConnection.blockSignals( true );
+    m_networkConnection.disconnectServer( );
+    m_networkConnection.blockSignals( false );
+}
+
 auto MainWindow::onConnectClick( ) -> void
 {
-    const auto state = m_connectionWidget->getState( );
+    qDebug( ) << "connect clicked";
 
-    qDebug( ) << static_cast<int>( state );
-
-    switch ( state )
-    {
-    case State::connected:
-    case State::reconnection:
-        m_networkConnection.disconnectServer( );
-        m_connectionWidget->setState( State::disconnected );
-        break;
-    case State::disconnected:
-        m_connectionWidget->setState( State::reconnection );
-        connectToServer( );
-        break;
-    }
+    connectToServer( );
 }
+
 auto MainWindow::connectToServer( ) -> void
 {
     const auto address = m_connectionWidget->getAdress( );
     const auto port    = m_connectionWidget->getPort( );
+
     m_networkConnection.connectToServer( address, port );
 }
 

@@ -27,18 +27,22 @@ public:
 
 signals:
     void sig_connect( );
+    void sig_disconnect( );
 
 private:
     auto on_btnRestore( ) -> void;
+    auto on_btnConnect( ) -> void;
 
     auto initConnections( ) -> void;
 
     auto init( ) -> void;
     auto initStyles( ) -> void;
+    auto initAddressValidator( ) -> void;
 
     auto initStateWidget( ) -> void;
 
 private:
     Ui::ConnectionWidget* ui;
     StateWidget* m_stateWidget{nullptr};
+    State m_state{State::disconnected};
 };

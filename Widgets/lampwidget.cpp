@@ -3,17 +3,14 @@
 #include <QDebug>
 #include <QPainter>
 
-//#include "Styles/styles.h"
-
 LampWidget::LampWidget( QWidget* parent )
     : QWidget( parent )
 {
-    // Styles::aplyMainStyle( this );
 }
 
 auto LampWidget::paintEvent( QPaintEvent* ) -> void
 {
-    auto rect = getRect( );
+    const auto rect = getRect( );
     paintLamp( rect );
     paintLight( rect );
     paintSwitch( rect );

@@ -27,6 +27,8 @@ public:
 
 private:
     auto onConnectClick( ) -> void;
+    auto onDisconnectClick( ) -> void;
+
     auto onCannotConnect( ) -> void;
     auto incomingRequest( const Request& ) -> void;
     auto connected( ) -> void;

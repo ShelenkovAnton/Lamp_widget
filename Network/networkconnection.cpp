@@ -21,11 +21,58 @@ auto NetworkConnection::initConnections( ) -> void
     connect( m_socket, &QTcpSocket::readyRead, this, &NetworkConnection::incomingData );
     connect( m_socket, &QTcpSocket::disconnected, this, &NetworkConnection::sig_disconnected );
     connect( &m_timer, &QTimer::timeout, this, &NetworkConnection::reconnect );
+
+    // connect( m_socket, &QTcpSocket::stateChanged, this, &NetworkConnection::state );
+}
+
+auto NetworkConnection::state( ) -> void
+{
+    qDebug( ) << m_socket->state( );
 }
 
 auto NetworkConnection::incomingData( ) -> void
 {
-    emit sig_request( Request{m_socket->readAll( )} );
+    qDebug( ) << "incoming data";
+
+    const auto data = m_socket->readAll( );
+
+    const Request request{data};
+
+    if ( request.valid( ) )
+    {
+        emit sig_request( request );
+    }
+
+    // sendRequest( data );
+}
+
+auto NetworkConnection::sendRequest( QByteArray data ) -> void
+{
+    if ( !data.isEmpty( ) )
+    {
+        switch ( static_cast<LampAction>( static_cast<int>( data[0] ) ) )
+        {
+        case LampAction::on:
+        case LampAction::off:
+            emit sig_request( Request{data.left( 4 )} );
+            data.remove( 0, 4 );
+            sendRequest( data );
+            break;
+        case LampAction::changeColor: {
+            const auto length = data.mid( 1, 3 ).toInt( );
+
+            if ( data.size( ) < length + 4 )
+                return;
+
+            emit sig_request( Request{data.left( length + 4 )} );
+            data.remove( 0, 4 + length );
+            sendRequest( data );
+            break;
+        }
+        case LampAction::unknown:
+            return;
+        }
+    }
 }
 
 auto NetworkConnection::connectToServer( const QHostAddress& address, const uint16_t port ) -> void
@@ -35,11 +82,13 @@ auto NetworkConnection::connectToServer( const QHostAddress& address, const uint
     m_port    = port;
     m_address = address;
 
+    qDebug( ) << "reconnect";
+
     if ( !isConnected( ) )
     {
         if ( m_currentAttempt++ < m_attemptCount )
         {
-            m_timer.start( 10 );
+            m_timer.start( 3000 );
         }
         else
         {
@@ -50,6 +99,7 @@ auto NetworkConnection::connectToServer( const QHostAddress& address, const uint
     {
         emit sig_connected( );
     }
+    emit sig_connected( );
 }
 
 auto NetworkConnection::reconnect( ) -> void
@@ -59,10 +109,11 @@ auto NetworkConnection::reconnect( ) -> void
 
 auto NetworkConnection::isConnected( ) const -> bool
 {
-    return ( m_socket->state( ) != QAbstractSocket::UnconnectedState );
+    return ( m_socket->state( ) == QAbstractSocket::ConnectedState );
 }
 
 auto NetworkConnection::disconnectServer( ) -> void
 {
-    return m_socket->disconnectFromHost( );
+    m_socket->close( );
+    m_socket->disconnectFromHost( );
 }
