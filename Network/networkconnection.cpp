@@ -19,21 +19,16 @@ auto NetworkConnection::init( ) -> void
 auto NetworkConnection::initConnections( ) -> void
 {
     connect( m_socket, &QTcpSocket::readyRead, this, &NetworkConnection::incomingData );
-    connect( m_socket, &QTcpSocket::disconnected, this, &NetworkConnection::sig_disconnected );
     connect( &m_timer, &QTimer::timeout, this, &NetworkConnection::reconnect );
-
-    // connect( m_socket, &QTcpSocket::stateChanged, this, &NetworkConnection::state );
 }
 
-auto NetworkConnection::state( ) -> void
+auto NetworkConnection::stopReconnction( ) -> void
 {
-    qDebug( ) << m_socket->state( );
+    m_connectionState = false;
 }
 
 auto NetworkConnection::incomingData( ) -> void
 {
-    qDebug( ) << "incoming data";
-
     const auto data = m_socket->readAll( );
 
     const Request request{data};
@@ -42,8 +37,6 @@ auto NetworkConnection::incomingData( ) -> void
     {
         emit sig_request( request );
     }
-
-    // sendRequest( data );
 }
 
 auto NetworkConnection::sendRequest( QByteArray data ) -> void
@@ -77,34 +70,36 @@ auto NetworkConnection::sendRequest( QByteArray data ) -> void
 
 auto NetworkConnection::connectToServer( const QHostAddress& address, const uint16_t port ) -> void
 {
-    m_socket->connectToHost( address, port );
-
     m_port    = port;
     m_address = address;
 
-    qDebug( ) << "reconnect";
+    m_connectionState = true;
 
-    if ( !isConnected( ) )
-    {
-        if ( m_currentAttempt++ < m_attemptCount )
-        {
-            m_timer.start( 3000 );
-        }
-        else
-        {
-            emit sig_cannot_connect( );
-        }
-    }
-    else
-    {
-        emit sig_connected( );
-    }
-    emit sig_connected( );
+    reconnect( );
 }
 
 auto NetworkConnection::reconnect( ) -> void
 {
     m_socket->connectToHost( m_address, m_port );
+
+    if ( isConnected( ) )
+    {
+        m_timer.stop( );
+        m_currentAttempt = 0;
+        emit sig_connected( );
+        return;
+    }
+
+    if ( ( m_currentAttempt++ < m_attemptCount ) && m_connectionState )
+    {
+        m_timer.start( 200 );
+    }
+    else
+    {
+        m_currentAttempt = 0;
+        m_timer.stop( );
+        emit sig_cannot_connect( );
+    }
 }
 
 auto NetworkConnection::isConnected( ) const -> bool

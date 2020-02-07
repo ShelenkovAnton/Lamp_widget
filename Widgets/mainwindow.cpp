@@ -36,7 +36,6 @@ auto MainWindow::initConnections( ) -> void
     connect( m_connectionWidget, &ConnectionWidget::sig_disconnect, this, &MainWindow::onDisconnectClick );
 
     connect( &m_networkConnection, &NetworkConnection::sig_cannot_connect, this, &MainWindow::onCannotConnect );
-    connect( &m_networkConnection, &NetworkConnection::sig_disconnected, this, &MainWindow::serverDisconnected );
     connect( &m_networkConnection, &NetworkConnection::sig_request, this, &MainWindow::incomingRequest );
     connect( &m_networkConnection, &NetworkConnection::sig_connected, this, &MainWindow::connected );
 }
@@ -44,13 +43,6 @@ auto MainWindow::initConnections( ) -> void
 auto MainWindow::initStyles( ) -> void
 {
     Styles::aplyMainStyle( this );
-}
-
-auto MainWindow::serverDisconnected( ) -> void
-{
-    m_connectionWidget->setState( State::reconnection );
-    connectToServer( );
-    m_connectionWidget->setState( State::connected );
 }
 
 auto MainWindow::connected( ) -> void
@@ -62,13 +54,12 @@ auto MainWindow::onDisconnectClick( ) -> void
 {
     m_networkConnection.blockSignals( true );
     m_networkConnection.disconnectServer( );
+    m_networkConnection.stopReconnction( );
     m_networkConnection.blockSignals( false );
 }
 
 auto MainWindow::onConnectClick( ) -> void
 {
-    qDebug( ) << "connect clicked";
-
     connectToServer( );
 }
 
@@ -110,6 +101,7 @@ auto MainWindow::incomingRequest( const Request& request ) -> void
         m_lampWidget->setState( false );
         break;
     case LampAction::changeColor:
+        m_lampWidget->setState( true );
         m_lampWidget->setColor( request.getColor( ) );
         break;
     default:

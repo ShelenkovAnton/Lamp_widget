@@ -23,8 +23,6 @@ public:
     MainWindow( QWidget* parent = nullptr );
     ~MainWindow( );
 
-    auto serverDisconnected( ) -> void;
-
 private:
     auto onConnectClick( ) -> void;
     auto onDisconnectClick( ) -> void;

@@ -15,8 +15,6 @@ auto Server::incomingConnection( qintptr handle ) -> void
 
     connect( &m_socket, &QTcpSocket::readyRead, this, &Server::readyRead );
     connect( &m_socket, &QTcpSocket::disconnected, this, &Server::clientDisconnected );
-
-    // m_socket.write( "you are connected to server" );
 }
 
 auto Server::generateRequest( ) -> QByteArray

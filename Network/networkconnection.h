@@ -19,8 +19,9 @@ public:
     auto isConnected( ) const -> bool;
     auto disconnectServer( ) -> void;
 
+    auto stopReconnction( ) -> void;
+
 signals:
-    void sig_disconnected( );
     void sig_cannot_connect( );
     void sig_request( Request );
     void sig_connected( );
@@ -32,8 +33,6 @@ private:
     auto reconnect( ) -> void;
     auto sendRequest( QByteArray ) -> void;
 
-    auto state( ) -> void;
-
 private:
     QTcpSocket* m_socket{nullptr};
 
@@ -42,6 +41,7 @@ private:
     QHostAddress m_address;
     quint16 m_port{0};
 
-    int16_t m_attemptCount{100};
+    int16_t m_attemptCount{30};
     int16_t m_currentAttempt{0};
+    bool m_connectionState{true};
 };
